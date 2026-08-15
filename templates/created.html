@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Link is Ready</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="card form-card">
+        <div class="badge">✅ Ready to Send</div>
+        <h1>Your Wish Page is Live!</h1>
+        <p class="subtitle">Copy this link and send it to her:</p>
+
+        <div class="link-box">
+            <input type="text" id="link-field" value="{{ link }}" readonly>
+            <button class="play-btn" onclick="copyLink()">Copy</button>
+        </div>
+
+        <a href="{{ link }}" target="_blank" class="play-btn reset-btn">👀 Preview It</a>
+    </main>
+
+    <script>
+        function copyLink() {
+            const field = document.getElementById("link-field");
+            field.select();
+            navigator.clipboard.writeText(field.value);
+            event.target.textContent = "Copied!";
+            setTimeout(() => event.target.textContent = "Copy", 1500);
+        }
+    </script>
+</body>
+</html>

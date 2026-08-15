@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, {{ name }}!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sparkle-field" id="sparkle-field"></div>
+    <div class="balloons">
+        <span>🎈</span><span>💕</span><span>🎈</span>
+        <span>🎈</span><span>💕</span><span>🎈</span>
+    </div>
+
+    <canvas id="confetti"></canvas>
+
+    <section id="gift-screen" class="gift-screen">
+        <p class="gift-eyebrow">Someone made this just for you...</p>
+        <p class="gift-hint">Tap the box to find out what's inside 🎁</p>
+
+        <div id="gift-box" class="gift-box">
+            <div class="glow-ring"></div>
+            <div class="lid"></div>
+            <div class="box-body">
+                <div class="ribbon-v"></div>
+                <div class="ribbon-h"></div>
+                <div class="bow">🎀</div>
+            </div>
+            <div class="light-crack"></div>
+        </div>
+
+        <p class="gift-sub">From {{ sender }}, with love ❤️</p>
+    </section>
+
+    <main class="card slideshow-card" id="card">
+        <div class="badge">🎂 Happy Birthday</div>
+        <h1 id="title-text"></h1>
+
+        <div class="slide-stage" id="slide-stage">
+            {% for slide in slides %}
+            <div class="slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
+                <div class="slide-photo-wrap">
+                    <div class="photo-glow"></div>
+                    <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Birthday memory {{ loop.index }}">
+                </div>
+                <p class="slide-feeling" data-feeling="{{ slide.feeling }}">{{ slide.feeling }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="progress-dots" id="progress-dots">
+            {% for slide in slides %}
+                <span class="dot {% if loop.first %}active{% endif %}"></span>
+            {% endfor %}
+        </div>
+
+        <div class="heart-line">
+            <span>💖</span><span>💛</span><span>💙</span><span>💚</span><span>💜</span>
+        </div>
+
+        <p class="from-line">— With love, {{ sender }}</p>
+    </main>
+
+    <div class="floating-hearts" id="floating-hearts"></div>
+    <div class="pop-balloons" id="pop-balloons"></div>
+
+    <script type="application/json" id="wish-data">
+    {
+        "name": {{ name|tojson }},
+        "sender": {{ sender|tojson }},
+        "slides": {{ slides|tojson }}
+    }
+    </script>
+    <script>
+        const wishData = JSON.parse(document.getElementById('wish-data').textContent);
+        const wishName = wishData.name;
+        const slideCount = wishData.slides.length;
+    </script>
+    <script src="{{ url_for('static', filename='birthday.js') }}"></script>
+</body>
+</html>

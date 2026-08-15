@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a Birthday Wish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="card form-card">
+        <div class="badge">🎁 Make a Wish Page</div>
+        <h1>Create Her Birthday Surprise</h1>
+        <p class="subtitle">Add a photo and a feeling for each moment you want to share.</p>
+
+        <form method="post" enctype="multipart/form-data" class="game-form" id="wish-form">
+            <input type="text" name="name" placeholder="Her name" required>
+            <input type="text" name="sender" placeholder="Your name (from)" required>
+
+            <div class="slide-entry" style="border-style: solid;">
+                <label class="slide-label">Balloon Themes (pick one or more)</label>
+                <div class="theme-checkboxes">
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="classic" checked> 🎈 Classic</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="pastel"> 🌸 Pastel</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="neon"> ✨ Neon Party</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="elegant"> 👑 Elegant Gold</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="rainbow"> 🌈 Rainbow</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="tropical"> 🌴 Tropical</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="love"> 💕 Love</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="cake"> 🎂 Cake & Sweets</label>
+                    <label class="theme-check"><input type="checkbox" name="balloon_themes" value="celebration"> 🎉 Celebration</label>
+                </div>
+            </div>
+
+            <div id="slide-list" class="slide-list">
+                <div class="slide-entry">
+                    <label class="slide-label">Photo 1</label>
+                    <input type="file" name="photos" accept="image/*" required>
+                    <textarea name="feelings" placeholder="What do you feel when you see this photo?" rows="3" required></textarea>
+                </div>
+            </div>
+
+            <button type="button" id="add-slide" class="add-btn">+ Add Another Photo</button>
+            <button type="submit" class="play-btn">✨ Generate Link</button>
+        </form>
+    </main>
+
+    <script>
+        let slideCount = 1;
+        const slideList = document.getElementById("slide-list");
+        document.getElementById("add-slide").addEventListener("click", () => {
+            slideCount++;
+            const div = document.createElement("div");
+            div.className = "slide-entry";
+            div.innerHTML = `
+                <label class="slide-label">Photo ${slideCount}</label>
+                <input type="file" name="photos" accept="image/*" required>
+                <textarea name="feelings" placeholder="What do you feel when you see this photo?" rows="3" required></textarea>
+                <button type="button" class="remove-btn">Remove</button>
+            `;
+            div.querySelector(".remove-btn").addEventListener("click", () => div.remove());
+            slideList.appendChild(div);
+        });
+    </script>
+</body>
+</html>
