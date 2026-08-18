@@ -30,6 +30,13 @@ def create():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         sender = request.form.get("sender", "").strip()
+        if not name or not sender:
+            return "Please provide both the recipient's name and your name.", 400
+
+        balloon_themes = request.form.getlist("balloon_themes")
+        if not balloon_themes:
+            balloon_themes = ["classic"]
+
         photos = request.files.getlist("photos")
         feelings = request.form.getlist("feelings")
 
@@ -38,18 +45,25 @@ def create():
 
         for i, photo in enumerate(photos):
             if photo and photo.filename and allowed_file(photo.filename):
+                feeling_text = feelings[i].strip() if i < len(feelings) else ""
+                if not feeling_text:
+                    return "Please add a feeling for every uploaded photo.", 400
+
                 ext = photo.filename.rsplit(".", 1)[1].lower()
                 photo_filename = f"{wish_id}_{i}.{ext}"
                 photo.save(os.path.join(UPLOAD_FOLDER, photo_filename))
-                
-                feeling_text = feelings[i].strip() if i < len(feelings) else ""
+
                 slides.append({"photo": photo_filename, "feeling": feeling_text})
+
+        if not slides:
+            return "Please upload at least one photo with a feeling.", 400
 
         data = load_data()
         data[wish_id] = {
             "name": name,
             "sender": sender,
-            "slides": slides
+            "slides": slides,
+            "balloon_themes": balloon_themes
         }
         save_data(data)
 
@@ -68,11 +82,11 @@ def wish(wish_id):
 
     return render_template(
         "wish.html",
-        name=entry["name"] or "there",
-        sender=entry["sender"],
-        slides=entry.get("slides", [])
+        name=entry.get("name") or "there",
+        sender=entry.get("sender", ""),
+        slides=entry.get("slides", []),
+        balloon_themes=entry.get("balloon_themes", ["classic"])
     )
-    
 
 
 if __name__ == "__main__":

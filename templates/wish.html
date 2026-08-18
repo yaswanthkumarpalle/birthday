@@ -9,41 +9,45 @@
 <body>
     <div class="sparkle-field" id="sparkle-field"></div>
     <div class="balloons">
-        <span>🎈</span><span>💕</span><span>🎈</span>
-        <span>🎈</span><span>💕</span><span>🎈</span>
+        <span>🎈</span><span>🎈</span><span>🎈</span>
+        <span>🎈</span><span>🎈</span><span>🎈</span>
     </div>
 
     <canvas id="confetti"></canvas>
 
+    <!-- GIFT BOX SCREEN -->
     <section id="gift-screen" class="gift-screen">
         <p class="gift-eyebrow">Someone made this just for you...</p>
         <p class="gift-hint">Tap the box to find out what's inside 🎁</p>
 
-        <div id="gift-box" class="gift-box">
-            <div class="glow-ring"></div>
-            <div class="lid"></div>
-            <div class="box-body">
-                <div class="ribbon-v"></div>
-                <div class="ribbon-h"></div>
-                <div class="bow">🎀</div>
+        <div class="scene">
+            <div id="gift-box" class="box3d">
+                <div class="face front"><span class="bow-3d">🎀</span></div>
+                <div class="face back"></div>
+                <div class="face right"></div>
+                <div class="face left"></div>
+                <div class="face top" id="box-lid"></div>
+                <div class="face bottom"></div>
+                <div class="glow-ring"></div>
             </div>
-            <div class="light-crack"></div>
         </div>
 
         <p class="gift-sub">From {{ sender }}, with love ❤️</p>
     </section>
 
+    <!-- SLIDESHOW & MESSAGE CARD -->
     <main class="card slideshow-card" id="card">
         <div class="badge">🎂 Happy Birthday</div>
-        <h1 id="title-text"></h1>
+        <h1 id="title-text">Happy Birthday, {{ name }}!</h1>
 
         <div class="slide-stage" id="slide-stage">
             {% for slide in slides %}
             <div class="slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
                 <div class="slide-photo-wrap">
                     <div class="photo-glow"></div>
-                    <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Birthday memory {{ loop.index }}">
+                    <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Slide photo">
                 </div>
+                <!-- Pre-filled text with fallback typewriter data attribute -->
                 <p class="slide-feeling" data-feeling="{{ slide.feeling }}">{{ slide.feeling }}</p>
             </div>
             {% endfor %}
@@ -65,18 +69,22 @@
     <div class="floating-hearts" id="floating-hearts"></div>
     <div class="pop-balloons" id="pop-balloons"></div>
 
-    <script type="application/json" id="wish-data">
-    {
-        "name": {{ name|tojson }},
-        "sender": {{ sender|tojson }},
-        "slides": {{ slides|tojson }}
-    }
+    <!-- SAFELY EMBED JINJA DATA FOR JAVASCRIPT -->
+    <script id="wish-data" type="application/json">
+        {
+            "name": {{ name | tojson | safe }},
+            "sender": {{ sender | tojson | safe }},
+            "slides": {{ slides | tojson | safe }}
+        }
     </script>
+
     <script>
+        // Safely parse injected Flask JSON data
         const wishData = JSON.parse(document.getElementById('wish-data').textContent);
         const wishName = wishData.name;
         const slideCount = wishData.slides.length;
     </script>
+
     <script src="{{ url_for('static', filename='birthday.js') }}"></script>
 </body>
 </html>

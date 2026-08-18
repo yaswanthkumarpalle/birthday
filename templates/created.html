@@ -14,19 +14,29 @@
 
         <div class="link-box">
             <input type="text" id="link-field" value="{{ link }}" readonly>
-            <button class="play-btn" onclick="copyLink()">Copy</button>
+            <button type="button" class="play-btn" onclick="copyLink(this)">Copy</button>
         </div>
 
         <a href="{{ link }}" target="_blank" class="play-btn reset-btn">👀 Preview It</a>
     </main>
 
     <script>
-        function copyLink() {
+        async function copyLink(button) {
             const field = document.getElementById("link-field");
             field.select();
-            navigator.clipboard.writeText(field.value);
-            event.target.textContent = "Copied!";
-            setTimeout(() => event.target.textContent = "Copy", 1500);
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(field.value);
+                } else {
+                    document.execCommand("copy");
+                }
+                button.textContent = "Copied!";
+            } catch {
+                button.textContent = "Select & Copy";
+            }
+
+            setTimeout(() => button.textContent = "Copy", 1500);
         }
     </script>
 </body>
