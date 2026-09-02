@@ -22,7 +22,13 @@
 
         <div class="scene">
             <div id="gift-box" class="box3d">
-                <div class="face front"><span class="bow-3d">🎀</span></div>
+                <div class="face front">
+                    <div class="gift-ribbon" aria-hidden="true">
+                        <span class="ribbon-loop left"></span>
+                        <span class="ribbon-loop right"></span>
+                        <span class="ribbon-knot"></span>
+                    </div>
+                </div>
                 <div class="face back"></div>
                 <div class="face right"></div>
                 <div class="face left"></div>
@@ -42,7 +48,7 @@
 
         <div class="slide-stage" id="slide-stage">
             {% for slide in slides %}
-            <div class="slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
+            <div class="slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" data-variant="{{ loop.index0 % 5 }}">
                 <div class="slide-photo-wrap">
                     <div class="photo-glow"></div>
                     <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Slide photo">
@@ -51,6 +57,9 @@
                 <p class="slide-feeling" data-feeling="{{ slide.feeling }}">{{ slide.feeling }}</p>
             </div>
             {% endfor %}
+
+            <button class="slide-nav slide-prev" type="button" aria-label="Previous photo" hidden>←</button>
+            <button class="slide-nav slide-next" type="button" aria-label="Next photo" hidden>→</button>
         </div>
 
         <div class="progress-dots" id="progress-dots">
@@ -74,7 +83,8 @@
         {
             "name": {{ name | tojson | safe }},
             "sender": {{ sender | tojson | safe }},
-            "slides": {{ slides | tojson | safe }}
+            "slides": {{ slides | tojson | safe }},
+            "balloon_themes": {{ balloon_themes | tojson | safe }}
         }
     </script>
 
@@ -82,6 +92,7 @@
         // Safely parse injected Flask JSON data
         const wishData = JSON.parse(document.getElementById('wish-data').textContent);
         const wishName = wishData.name;
+        const balloonThemes = wishData.balloon_themes || ["classic"];
         const slideCount = wishData.slides.length;
     </script>
 

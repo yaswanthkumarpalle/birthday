@@ -215,19 +215,41 @@ function startBalloonSpawner() {
 /* ---------- Slideshow ---------- */
 let currentSlide = 0;
 let feelingAnimationId = 0;
+let slideshowTimer = null;
+
+function updateSlideNavigation() {
+    const prevButton = document.querySelector(".slide-prev");
+    const nextButton = document.querySelector(".slide-next");
+    if (!prevButton || !nextButton || typeof slideCount === "undefined") return;
+
+    const isFirstSlide = currentSlide === 0;
+    const isLastSlide = currentSlide >= slideCount - 1;
+
+    prevButton.hidden = isFirstSlide;
+    prevButton.disabled = isFirstSlide;
+    prevButton.style.visibility = isFirstSlide ? "hidden" : "visible";
+
+    nextButton.hidden = isLastSlide;
+    nextButton.disabled = isLastSlide;
+    nextButton.style.visibility = isLastSlide ? "hidden" : "visible";
+}
 
 function showSlide(index) {
     const slides = document.querySelectorAll(".slide");
     const dots = document.querySelectorAll(".dot");
     if (!slides.length) return;
 
+    const safeIndex = ((index % slides.length) + slides.length) % slides.length;
+    currentSlide = safeIndex;
+
     slides.forEach(s => s.classList.remove("active"));
     dots.forEach(d => d.classList.remove("active"));
 
-    slides[index].classList.add("active");
-    if (dots[index]) dots[index].classList.add("active");
+    slides[safeIndex].classList.add("active");
+    if (dots[safeIndex]) dots[safeIndex].classList.add("active");
 
-    typeFeeling(slides[index]);
+    updateSlideNavigation();
+    typeFeeling(slides[safeIndex]);
 }
 
 function typeFeeling(slideEl) {
@@ -247,13 +269,61 @@ function typeFeeling(slideEl) {
     typeChar();
 }
 
+function restartSlideshow() {
+    if (slideshowTimer) {
+        clearInterval(slideshowTimer);
+    }
+    if (typeof slideCount === "undefined" || slideCount === 0) return;
+    slideshowTimer = setInterval(() => {
+        if (currentSlide < slideCount - 1) {
+            currentSlide += 1;
+        } else {
+            currentSlide = 0;
+        }
+        showSlide(currentSlide);
+    }, 9000);
+}
+
+function bindSlideTapNavigation() {
+    const prevButton = document.querySelector(".slide-prev");
+    const nextButton = document.querySelector(".slide-next");
+
+    if (prevButton) {
+        prevButton.addEventListener("click", () => {
+            if (currentSlide > 0) {
+                currentSlide -= 1;
+                showSlide(currentSlide);
+                restartSlideshow();
+            }
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener("click", () => {
+            if (currentSlide < slideCount - 1) {
+                currentSlide += 1;
+                showSlide(currentSlide);
+                restartSlideshow();
+            }
+        });
+    }
+
+    document.querySelectorAll(".slide-photo-wrap").forEach((photoWrap) => {
+        photoWrap.addEventListener("click", () => {
+            if (currentSlide < slideCount - 1) {
+                currentSlide += 1;
+                showSlide(currentSlide);
+                restartSlideshow();
+            }
+        });
+    });
+}
+
 function startSlideshow() {
     if (typeof slideCount === "undefined" || slideCount === 0) return;
     showSlide(0);
-    setInterval(() => {
-        currentSlide = (currentSlide + 1) % slideCount;
-        showSlide(currentSlide);
-    }, 6000);
+    bindSlideTapNavigation();
+    restartSlideshow();
 }
 
 /* ---------- Typed title ---------- */
@@ -330,78 +400,3 @@ function enableCardTilt() {
     });
 }
 enableCardTilt();
-// Typewriter effect function
-function typeWriter(text, elementId, speed = 50) {
-  const container = document.getElementById(elementId);
-  container.innerHTML = "";
-  let i = 0;
-  
-  function type() {
-    if (i < text.length) {
-      container.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, speed);
-    }
-  }
-  type();
-}
-
-// Function to reveal the card overlay
-function showMessageCard() {
-  const overlay = document.getElementById("ui-overlay");
-  overlay.style.pointerEvents = "auto";
-  
-  // Animate card in
-  gsap.to(overlay, { 
-    opacity: 1, 
-    y: 0, 
-    duration: 0.8, 
-    ease: "power2.out",
-    onComplete: () => {
-      // Start typing the wish message passed from Jinja2
-      if (typeof wishMessage !== "undefined") {
-        typeWriter(wishMessage, "typed-message");
-      }
-    }
-  });
-}
-
-// Function to hide the card overlay
-function hideMessageCard() {
-  const overlay = document.getElementById("ui-overlay");
-  overlay.style.pointerEvents = "none";
-  gsap.to(overlay, { opacity: 0, y: 20, duration: 0.5 });
-}
-
-// Update your existing Raycaster click event listener inside birthday3d.js
-window.addEventListener("click", (e) => {
-  // Ignore clicks on the UI card itself
-  if (e.target.closest("#ui-overlay")) return;
-
-  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-
-  const intersects = raycaster.intersectObjects(boxGroup.children);
-  if (intersects.length > 0) {
-    // 1. Animate Lid Opening
-    gsap.to(boxLid.position, { y: 4, duration: 1, ease: "back.out(1.7)" });
-    gsap.to(boxLid.rotation, { x: -Math.PI / 2, duration: 1 });
-    gsap.to(boxGroup.scale, { x: 0, y: 0, z: 0, delay: 0.8, duration: 0.5 });
-
-    // 2. Reveal 3D Photo Frame
-    if (typeof slidesData !== "undefined" && slidesData.length > 0) {
-      const firstPhotoPath = "/static/uploads/" + slidesData[0].photo;
-      const photoCard = createPhotoFrame(firstPhotoPath);
-      photoCard.position.set(0, 1.5, 0);
-      photoCard.scale.set(0, 0, 0);
-      scene.add(photoCard);
-      gsap.to(photoCard.scale, { x: 1, y: 1, z: 1, delay: 0.5, duration: 0.8, ease: "back.out(2)" });
-    }
-
-    // 3. Trigger the message UI overlay display
-    setTimeout(() => {
-      showMessageCard();
-    }, 1200);
-  }
-});
