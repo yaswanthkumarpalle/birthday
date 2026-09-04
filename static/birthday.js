@@ -58,7 +58,7 @@ if (canvas) {
     });
 }
 
-const confettiColors = ["#ff6b81", "#feca57", "#48dbfb", "#1dd1a1", "#a29bfe", "#ff9ff3", "#ffe066"];
+const confettiColors = ["#a61e3d", "#9a6b00", "#12658c", "#08734f", "#5a3a99", "#9b245f", "#8d6b00"];
 const skyshotColors = ["#ff1744", "#ffea00", "#00e5ff", "#76ff03", "#ff4081", "#d500f9", "#ffffff"];
 const lowPowerDevice = window.matchMedia("(max-width: 900px)").matches
     || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
@@ -72,6 +72,15 @@ let burstColorIndex = 0;
 let burstNumber = 0;
 let grandBurstActive = false;
 let drawScheduled = false;
+
+function darkenBurstColor(color) {
+    if (!/^#[0-9a-f]{6}$/i.test(color)) return color;
+    const red = Math.round(parseInt(color.slice(1, 3), 16) * 0.68);
+    const green = Math.round(parseInt(color.slice(3, 5), 16) * 0.68);
+    const blue = Math.round(parseInt(color.slice(5, 7), 16) * 0.68);
+    return `#${[red, green, blue].map(channel => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
 function scheduleDraw() {
     if (drawScheduled || document.hidden) return;
     drawScheduled = true;
@@ -175,7 +184,8 @@ function launchSkyshot(slideIndex = skyshotSlide) {
 
     const selectedColors = getSelectedThemeColors();
     const palette = selectedColors.slice(slideIndex % selectedColors.length)
-        .concat(selectedColors.slice(0, slideIndex % selectedColors.length));
+        .concat(selectedColors.slice(0, slideIndex % selectedColors.length))
+        .map(darkenBurstColor);
     const shellColor = palette[burstColorIndex % palette.length];
     burstColorIndex++;
     const isGrand = burstNumber % 3 === 1;
@@ -391,7 +401,7 @@ function popBalloon(balloon, color) {
     burst.className = "pop-burst";
     burst.style.left = (rect.left + rect.width / 2 - 30) + "px";
     burst.style.top = (rect.top + rect.height / 2 - 30) + "px";
-    burst.style.setProperty("--burst-color", color);
+    burst.style.setProperty("--burst-color", darkenBurstColor(color));
 
     for (let i = 0; i < 10; i++) {
         const piece = document.createElement("span");
