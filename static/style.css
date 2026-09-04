@@ -911,6 +911,61 @@ body.theme-celebration { background: radial-gradient(circle at top, rgba(246, 21
     }
 }
 
+@media (max-width: 600px) {
+    body {
+        align-items: flex-start;
+        padding: 1rem 0.7rem;
+    }
+
+    .card,
+    .slideshow-card {
+        width: 100%;
+        max-width: none;
+        border-radius: 18px;
+        padding: 1.35rem 1rem;
+    }
+
+    .form-card h1 {
+        font-size: 1.45rem;
+    }
+
+    .form-card .subtitle {
+        margin-bottom: 1rem;
+    }
+
+    .theme-checkboxes {
+        grid-template-columns: 1fr;
+    }
+
+    .game-form input[type="text"],
+    .game-form input[type="file"],
+    .game-form textarea,
+    .add-btn,
+    .play-btn {
+        min-height: 46px;
+    }
+
+    .slide-stage {
+        min-height: 310px;
+        padding-right: 0;
+    }
+
+    .slide-photo-wrap {
+        width: min(72vw, 220px);
+        height: min(72vw, 220px);
+    }
+
+    .slide-feeling {
+        width: 100%;
+        font-size: 1rem;
+    }
+
+    .slide-nav {
+        width: 44px;
+        height: 44px;
+    }
+}
+
 /* ============ Create/Created form pages ============ */
 .form-card h1 { font-size: 1.7rem; color: #2d2d2d; margin-bottom: 0.5rem; }
 .form-card .subtitle { color: #666; margin-bottom: 1.5rem; }
