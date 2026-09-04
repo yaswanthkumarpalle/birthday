@@ -426,7 +426,6 @@ function startBalloonSpawner() {
 /* ---------- Slideshow ---------- */
 let currentSlide = 0;
 let feelingAnimationId = 0;
-let slideshowTimer = null;
 
 function updateSlideNavigation() {
     const prevButton = document.querySelector(".slide-prev");
@@ -483,18 +482,7 @@ function typeFeeling(slideEl) {
 }
 
 function restartSlideshow() {
-    if (slideshowTimer) {
-        clearInterval(slideshowTimer);
-    }
-    if (typeof slideCount === "undefined" || slideCount === 0) return;
-    slideshowTimer = setInterval(() => {
-        if (currentSlide < slideCount - 1) {
-            currentSlide += 1;
-        } else {
-            currentSlide = 0;
-        }
-        showSlide(currentSlide);
-    }, 30000);
+    // Slides remain visible until the reader uses the navigation controls.
 }
 
 function bindSlideTapNavigation() {
