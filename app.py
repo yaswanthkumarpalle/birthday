@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, send_from_directory, url_for
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -9,8 +9,13 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+storage_dir = os.getenv("BIRTHDAY_STORAGE_DIR")
+if storage_dir:
+    UPLOAD_FOLDER = os.path.join(storage_dir, "uploads")
+    DATA_FILE = os.path.join(storage_dir, "wishes.json")
+else:
+    DATA_FILE = os.path.join(app.root_path, "wishes.json")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-DATA_FILE = os.path.join(app.root_path, "wishes.json")
 data_lock = RLock()
 data_cache = None
 data_mtime_ns = None
@@ -75,6 +80,11 @@ def add_static_cache_headers(response):
         response.cache_control.max_age = 86400
         response.cache_control.no_cache = False
     return response
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 
 @app.route("/", methods=["GET", "POST"])
