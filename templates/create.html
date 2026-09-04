@@ -40,7 +40,8 @@
             </div>
 
             <button type="button" id="add-slide" class="add-btn">+ Add Another Photo</button>
-            <button type="submit" class="play-btn">✨ Generate Link</button>
+            <button type="submit" class="play-btn" id="generate-btn">✨ Generate Link</button>
+            <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
         </form>
     </main>
 
@@ -59,6 +60,64 @@
             `;
             div.querySelector(".remove-btn").addEventListener("click", () => div.remove());
             slideList.appendChild(div);
+        });
+
+        const wishForm = document.getElementById("wish-form");
+        const generateButton = document.getElementById("generate-btn");
+        const uploadStatus = document.getElementById("upload-status");
+        const maxPhotoDimension = 1600;
+
+        function resizePhoto(file) {
+            return new Promise((resolve) => {
+                if (!file.type.startsWith("image/") || file.size < 1024 * 1024) {
+                    resolve(file);
+                    return;
+                }
+
+                const image = new Image();
+                const objectUrl = URL.createObjectURL(file);
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    const scale = Math.min(1, maxPhotoDimension / Math.max(image.naturalWidth, image.naturalHeight));
+                    if (scale === 1) {
+                        resolve(file);
+                        return;
+                    }
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.round(image.naturalWidth * scale);
+                    canvas.height = Math.round(image.naturalHeight * scale);
+                    canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob((blob) => {
+                        resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }) : file);
+                    }, "image/jpeg", 0.82);
+                };
+                image.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(file);
+                };
+                image.src = objectUrl;
+            });
+        }
+
+        wishForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            generateButton.disabled = true;
+            generateButton.textContent = "Preparing photos...";
+
+            const photoInputs = [...wishForm.querySelectorAll('input[type="file"]')];
+            for (let index = 0; index < photoInputs.length; index++) {
+                const input = photoInputs[index];
+                if (!input.files.length) continue;
+                const resizedPhoto = await resizePhoto(input.files[0]);
+                const transfer = new DataTransfer();
+                transfer.items.add(resizedPhoto);
+                input.files = transfer.files;
+                uploadStatus.textContent = `Preparing photo ${index + 1} of ${photoInputs.length}...`;
+            }
+
+            uploadStatus.textContent = "Uploading your wish...";
+            wishForm.submit();
         });
     </script>
 </body>
