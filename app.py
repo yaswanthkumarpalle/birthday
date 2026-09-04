@@ -26,8 +26,13 @@ def load_data():
     with data_lock:
         if data_cache is None or current_mtime_ns != data_mtime_ns:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data_cache = json.load(f)
-            data_mtime_ns = current_mtime_ns
+                try:
+                    data_cache = json.load(f)
+                except json.JSONDecodeError:
+                    data_cache = {}
+                    with open(DATA_FILE, "w", encoding="utf-8") as repaired_file:
+                        json.dump(data_cache, repaired_file)
+            data_mtime_ns = os.stat(DATA_FILE).st_mtime_ns
         return data_cache
 
 def save_data(data):

@@ -66,6 +66,39 @@
         const generateButton = document.getElementById("generate-btn");
         const uploadStatus = document.getElementById("upload-status");
         const maxPhotoDimension = 1600;
+        const draftStorageKey = "birthday-wish-draft";
+
+        function saveDraft() {
+            const draft = {
+                name: wishForm.elements.name.value,
+                sender: wishForm.elements.sender.value,
+                feelings: [...wishForm.querySelectorAll('textarea[name="feelings"]')].map((field) => field.value),
+                themes: [...wishForm.querySelectorAll('input[name="balloon_themes"]:checked')].map((field) => field.value)
+            };
+            localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+        }
+
+        function restoreDraft() {
+            try {
+                const draft = JSON.parse(localStorage.getItem(draftStorageKey));
+                if (!draft) return;
+                wishForm.elements.name.value = draft.name || "";
+                wishForm.elements.sender.value = draft.sender || "";
+                const feelings = wishForm.querySelectorAll('textarea[name="feelings"]');
+                if (draft.feelings && draft.feelings[0]) feelings[0].value = draft.feelings[0];
+                if (Array.isArray(draft.themes)) {
+                    wishForm.querySelectorAll('input[name="balloon_themes"]').forEach((field) => {
+                        field.checked = draft.themes.includes(field.value);
+                    });
+                }
+            } catch (error) {
+                localStorage.removeItem(draftStorageKey);
+            }
+        }
+
+        wishForm.addEventListener("input", saveDraft);
+        wishForm.addEventListener("change", saveDraft);
+        restoreDraft();
 
         function resizePhoto(file) {
             return new Promise((resolve) => {
@@ -117,6 +150,7 @@
             }
 
             uploadStatus.textContent = "Uploading your wish...";
+            localStorage.removeItem(draftStorageKey);
             wishForm.submit();
         });
     </script>

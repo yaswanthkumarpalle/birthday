@@ -59,6 +59,7 @@ if (canvas) {
 }
 
 const confettiColors = ["#ff6b81", "#feca57", "#48dbfb", "#1dd1a1", "#a29bfe", "#ff9ff3", "#ffe066"];
+const lowPowerDevice = window.matchMedia("(max-width: 600px)").matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 let pieces = [];
 
 function burstConfetti(originX, originY, count = 160) {
@@ -128,12 +129,14 @@ draw();
 
 function launchFireworkShow() {
     let count = 0;
+    const burstCount = lowPowerDevice ? 3 : 5;
+    const particleCount = lowPowerDevice ? 24 : 50;
     const interval = setInterval(() => {
         const x = Math.random() * canvas.width * 0.7 + canvas.width * 0.15;
         const y = Math.random() * canvas.height * 0.4 + canvas.height * 0.1;
-        fireworkBurst(x, y, 50);
+        fireworkBurst(x, y, particleCount);
         count++;
-        if (count >= 5) clearInterval(interval);
+        if (count >= burstCount) clearInterval(interval);
     }, 500);
 }
 
@@ -142,6 +145,7 @@ function launchFloatingHearts() {
     const container = document.getElementById("floating-hearts");
     if (!container) return;
     const emojis = ["💖", "💕", "💗", "✨", "🎉"];
+    const heartCount = lowPowerDevice ? 12 : 30;
     let count = 0;
     const interval = setInterval(() => {
         const el = document.createElement("span");
@@ -153,7 +157,7 @@ function launchFloatingHearts() {
         container.appendChild(el);
         setTimeout(() => el.remove(), 10000);
         count++;
-        if (count >= 30) clearInterval(interval);
+        if (count >= heartCount) clearInterval(interval);
     }, 400);
 }
 
@@ -216,7 +220,7 @@ function popBalloon(balloon, color) {
 
 function startBalloonSpawner() {
     spawnBalloon();
-    setInterval(spawnBalloon, 1400);
+    setInterval(spawnBalloon, lowPowerDevice ? 2400 : 1400);
 }
 
 /* ---------- Slideshow ---------- */
@@ -371,7 +375,7 @@ if (giftBox) {
             const originX = rect.left + rect.width / 2;
             const originY = rect.top + rect.height / 2;
 
-            setTimeout(() => burstConfetti(originX, originY, 120), 300);
+            setTimeout(() => burstConfetti(originX, originY, lowPowerDevice ? 55 : 120), 300);
 
             setTimeout(() => {
                 giftScreen.classList.add("hidden");
