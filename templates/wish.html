@@ -51,7 +51,7 @@
             <div class="slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" data-variant="{{ loop.index0 % 5 }}">
                 <div class="slide-photo-wrap">
                     <div class="photo-glow"></div>
-                    <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Slide photo">
+                    <img src="{{ url_for('static', filename='uploads/' + slide.photo) }}" class="slide-photo" alt="Slide photo" loading="{% if loop.first %}eager{% else %}lazy{% endif %}" decoding="async">
                 </div>
                 <!-- Pre-filled text with fallback typewriter data attribute -->
                 <p class="slide-feeling" data-feeling="{{ slide.feeling }}">{{ slide.feeling }}</p>

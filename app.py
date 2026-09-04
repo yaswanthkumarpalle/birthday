@@ -1,28 +1,56 @@
 from flask import Flask, render_template, request, url_for
-import os, json, uuid
+import json
+import os
+from threading import RLock
+import uuid
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
-UPLOAD_FOLDER = os.path.join("static", "uploads")
+UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-DATA_FILE = "wishes.json"
+DATA_FILE = os.path.join(app.root_path, "wishes.json")
+data_lock = RLock()
+data_cache = None
+data_mtime_ns = None
 
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
 
 def load_data():
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    global data_cache, data_mtime_ns
+    current_mtime_ns = os.stat(DATA_FILE).st_mtime_ns
+    with data_lock:
+        if data_cache is None or current_mtime_ns != data_mtime_ns:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data_cache = json.load(f)
+            data_mtime_ns = current_mtime_ns
+        return data_cache
 
 def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    global data_cache, data_mtime_ns
+    temporary_file = f"{DATA_FILE}.tmp"
+    with data_lock:
+        with open(temporary_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, separators=(",", ":"))
+        os.replace(temporary_file, DATA_FILE)
+        data_cache = data
+        data_mtime_ns = os.stat(DATA_FILE).st_mtime_ns
 
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+
+@app.after_request
+def add_static_cache_headers(response):
+    if request.path.startswith("/static/"):
+        response.cache_control.public = True
+        response.cache_control.max_age = 86400
+        response.cache_control.no_cache = False
+    return response
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -58,14 +86,15 @@ def create():
         if not slides:
             return "Please upload at least one photo with a feeling.", 400
 
-        data = load_data()
-        data[wish_id] = {
-            "name": name,
-            "sender": sender,
-            "slides": slides,
-            "balloon_themes": balloon_themes
-        }
-        save_data(data)
+        with data_lock:
+            data = dict(load_data())
+            data[wish_id] = {
+                "name": name,
+                "sender": sender,
+                "slides": slides,
+                "balloon_themes": balloon_themes
+            }
+            save_data(data)
 
         link = url_for("wish", wish_id=wish_id, _external=True)
         return render_template("created.html", link=link)
@@ -90,4 +119,4 @@ def wish(wish_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG", "0") == "1")

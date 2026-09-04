@@ -75,6 +75,7 @@ function burstConfetti(originX, originY, count = 160) {
             life: 0
         });
     }
+    if (!document.hidden) requestAnimationFrame(draw);
 }
 
 function fireworkBurst(x, y, count = 50) {
@@ -91,32 +92,38 @@ function fireworkBurst(x, y, count = 50) {
             rotation: 0, spin: 0, life: 0
         });
     }
+    if (!document.hidden) requestAnimationFrame(draw);
 }
 
 function draw() {
-    if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (pieces.length) {
-            pieces.forEach(p => {
-                p.vy += p.gravity;
-                p.x += p.vx;
-                p.y += p.vy;
-                p.rotation += p.spin;
-                p.life++;
+    if (!ctx || document.hidden) return;
 
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, 1 - p.life / 240);
-                ctx.translate(p.x, p.y);
-                ctx.rotate((p.rotation * Math.PI) / 180);
-                ctx.fillStyle = p.color;
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-                ctx.restore();
-            });
-            pieces = pieces.filter(p => p.life < 240);
-        }
-    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+        p.vy += p.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.spin;
+        p.life++;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - p.life / 240);
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+    });
+    pieces = pieces.filter(p => p.life < 240);
+
+    if (!pieces.length) return;
     requestAnimationFrame(draw);
 }
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && pieces.length) requestAnimationFrame(draw);
+});
+
 draw();
 
 function launchFireworkShow() {
