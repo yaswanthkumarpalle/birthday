@@ -484,7 +484,7 @@ function restartSlideshow() {
             currentSlide = 0;
         }
         showSlide(currentSlide);
-    }, 9000);
+    }, 20000);
 }
 
 function bindSlideTapNavigation() {
