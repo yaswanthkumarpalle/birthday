@@ -615,6 +615,14 @@ function enableCardTilt() {
 enableCardTilt();
 
 const saveMemoryButton = document.getElementById("save-memory");
+function restoreSaveMemoryButton() {
+    if (!saveMemoryButton) return;
+    saveMemoryButton.disabled = false;
+    saveMemoryButton.textContent = "⬇ Save Wish as PDF";
+}
+
+window.addEventListener("afterprint", restoreSaveMemoryButton);
+
 if (saveMemoryButton) {
     saveMemoryButton.addEventListener("click", async () => {
         saveMemoryButton.disabled = true;
@@ -633,8 +641,11 @@ if (saveMemoryButton) {
             });
         }));
 
+        if (typeof window.print !== "function") {
+            restoreSaveMemoryButton();
+            return;
+        }
+
         window.print();
-        saveMemoryButton.disabled = false;
-        saveMemoryButton.textContent = "⬇ Save Wish as PDF";
     });
 }
