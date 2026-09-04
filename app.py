@@ -11,6 +11,7 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 storage_dir = os.getenv("BIRTHDAY_STORAGE_DIR")
 if storage_dir:
+    os.makedirs(storage_dir, exist_ok=True)
     UPLOAD_FOLDER = os.path.join(storage_dir, "uploads")
     DATA_FILE = os.path.join(storage_dir, "wishes.json")
 else:
