@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, url_for
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from threading import RLock
 import uuid
 
@@ -14,6 +14,7 @@ DATA_FILE = os.path.join(app.root_path, "wishes.json")
 data_lock = RLock()
 data_cache = None
 data_mtime_ns = None
+WISH_LIFETIME = timedelta(hours=24)
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
@@ -47,6 +48,24 @@ ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+
+def parse_created_at(value):
+    try:
+        created_at = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return created_at if created_at.tzinfo else created_at.replace(tzinfo=timezone.utc)
+
+
+def remove_wish_files(entry):
+    for slide in entry.get("slides", []):
+        photo = os.path.basename(slide.get("photo", ""))
+        if photo:
+            try:
+                os.remove(os.path.join(UPLOAD_FOLDER, photo))
+            except FileNotFoundError:
+                pass
 
 
 @app.after_request
@@ -113,15 +132,23 @@ def wish(wish_id):
     with data_lock:
         data = dict(load_data())
         entry = data.get(wish_id)
-    if not entry:
-        return "Wish not found 💔", 404
+        if not entry:
+            return "Wish not found 💔", 404
 
-    # Start the expiry window for records created before timestamps were added.
-    if "created_at" not in entry:
-        entry = dict(entry)
-        entry["created_at"] = datetime.now(timezone.utc).isoformat()
-        data[wish_id] = entry
-        save_data(data)
+        # Expiry is based on generation time, so it is independent of browser state.
+        created_at = parse_created_at(entry.get("created_at"))
+        if created_at is None:
+            created_at = datetime.now(timezone.utc)
+            entry = dict(entry)
+            entry["created_at"] = created_at.isoformat()
+            data[wish_id] = entry
+            save_data(data)
+
+        if datetime.now(timezone.utc) - created_at >= WISH_LIFETIME:
+            remove_wish_files(entry)
+            data.pop(wish_id, None)
+            save_data(data)
+            return "Wish not found 💔", 404
 
     return render_template(
         "wish.html",
