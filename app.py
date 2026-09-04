@@ -66,10 +66,6 @@ def create():
         if not name or not sender:
             return "Please provide both the recipient's name and your name.", 400
 
-        recipient_gender = request.form.get("recipient_gender", "").strip().lower()
-        if recipient_gender not in {"boy", "girl", ""}:
-            recipient_gender = ""
-
         balloon_themes = request.form.getlist("balloon_themes")
         if not balloon_themes:
             balloon_themes = ["classic"]
@@ -100,7 +96,6 @@ def create():
             data[wish_id] = {
                 "name": name,
                 "sender": sender,
-                "recipient_gender": recipient_gender,
                 "slides": slides,
                 "balloon_themes": balloon_themes,
                 "created_at": datetime.now(timezone.utc).isoformat()
@@ -132,7 +127,6 @@ def wish(wish_id):
         "wish.html",
         name=entry.get("name") or "there",
         sender=entry.get("sender", ""),
-        recipient_gender=entry.get("recipient_gender", ""),
         slides=entry.get("slides", []),
         balloon_themes=entry.get("balloon_themes", ["classic"])
     )

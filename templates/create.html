@@ -16,13 +16,6 @@
             <input type="text" name="name" placeholder="person name" required>
             <input type="text" name="sender" placeholder="Your name (from)" required>
 
-            <label class="slide-label" for="recipient-gender">Birthday person</label>
-            <select name="recipient_gender" id="recipient-gender">
-                <option value="">Choose boy or girl (optional)</option>
-                <option value="boy">Boy</option>
-                <option value="girl">Girl</option>
-            </select>
-
             <div class="slide-entry" style="border-style: solid;">
                 <label class="slide-label">Balloon Themes (pick one or more)</label>
                 <div class="theme-checkboxes">
@@ -79,7 +72,6 @@
             const draft = {
                 name: wishForm.elements.name.value,
                 sender: wishForm.elements.sender.value,
-                recipientGender: wishForm.elements.recipient_gender.value,
                 feelings: [...wishForm.querySelectorAll('textarea[name="feelings"]')].map((field) => field.value),
                 themes: [...wishForm.querySelectorAll('input[name="balloon_themes"]:checked')].map((field) => field.value)
             };
@@ -92,7 +84,6 @@
                 if (!draft) return;
                 wishForm.elements.name.value = draft.name || "";
                 wishForm.elements.sender.value = draft.sender || "";
-                wishForm.elements.recipient_gender.value = draft.recipientGender || "";
                 const feelings = wishForm.querySelectorAll('textarea[name="feelings"]');
                 if (draft.feelings && draft.feelings[0]) feelings[0].value = draft.feelings[0];
                 if (Array.isArray(draft.themes)) {
