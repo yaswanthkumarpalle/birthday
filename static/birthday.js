@@ -233,7 +233,7 @@ function draw(timestamp = 0) {
     lastFrameTime = timestamp;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = "lighter";
+    ctx.globalCompositeOperation = lowPowerDevice ? "source-over" : "lighter";
     pieces.forEach(p => {
         p.previousX = p.x;
         p.previousY = p.y;
@@ -256,7 +256,7 @@ function draw(timestamp = 0) {
         if (p.shape === "flash") {
             const flashProgress = p.life / p.maxLife;
             const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * (1 - flashProgress * 0.6));
-            gradient.addColorStop(0, "rgba(255,255,255,0.95)");
+            gradient.addColorStop(0, lowPowerDevice ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.95)");
             gradient.addColorStop(0.35, p.color + "cc");
             gradient.addColorStop(1, p.color + "00");
             ctx.fillStyle = gradient;
