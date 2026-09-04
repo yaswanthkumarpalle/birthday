@@ -484,7 +484,7 @@ function restartSlideshow() {
             currentSlide = 0;
         }
         showSlide(currentSlide);
-    }, 20000);
+    }, 30000);
 }
 
 function bindSlideTapNavigation() {
@@ -606,7 +606,25 @@ enableCardTilt();
 
 const saveMemoryButton = document.getElementById("save-memory");
 if (saveMemoryButton) {
-    saveMemoryButton.addEventListener("click", () => {
+    saveMemoryButton.addEventListener("click", async () => {
+        saveMemoryButton.disabled = true;
+        saveMemoryButton.textContent = "Preparing PDF...";
+
+        const photos = [...document.querySelectorAll(".slide-photo")];
+        photos.forEach((photo) => {
+            photo.loading = "eager";
+        });
+
+        await Promise.all(photos.map((photo) => {
+            if (photo.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+                photo.addEventListener("load", resolve, { once: true });
+                photo.addEventListener("error", resolve, { once: true });
+            });
+        }));
+
         window.print();
+        saveMemoryButton.disabled = false;
+        saveMemoryButton.textContent = "⬇ Save Wish as PDF";
     });
 }
