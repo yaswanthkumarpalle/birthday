@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Birthday Wish</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260904-mobile') }}">
 </head>
 <body>
     <main class="card form-card">
@@ -65,7 +65,7 @@
         const wishForm = document.getElementById("wish-form");
         const generateButton = document.getElementById("generate-btn");
         const uploadStatus = document.getElementById("upload-status");
-        const maxPhotoDimension = 1600;
+        const maxPhotoDimension = window.matchMedia("(max-width: 600px)").matches ? 1024 : 1600;
         const draftStorageKey = "birthday-wish-draft";
 
         function saveDraft() {
@@ -100,13 +100,32 @@
         wishForm.addEventListener("change", saveDraft);
         restoreDraft();
 
-        function resizePhoto(file) {
-            return new Promise((resolve) => {
-                if (!file.type.startsWith("image/") || file.size < 1024 * 1024) {
-                    resolve(file);
-                    return;
-                }
+        async function resizePhoto(file) {
+            if (!file.type.startsWith("image/") || file.size < 512 * 1024) {
+                return file;
+            }
 
+            if ("createImageBitmap" in window) {
+                try {
+                    const bitmap = await createImageBitmap(file, {
+                        resizeWidth: maxPhotoDimension,
+                        resizeHeight: maxPhotoDimension,
+                        resizeQuality: "medium"
+                    });
+                    const canvas = document.createElement("canvas");
+                    const scale = Math.min(1, maxPhotoDimension / Math.max(bitmap.width, bitmap.height));
+                    canvas.width = Math.round(bitmap.width * scale);
+                    canvas.height = Math.round(bitmap.height * scale);
+                    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                    bitmap.close();
+                    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.75));
+                    return blob ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }) : file;
+                } catch (error) {
+                    // Use the Image fallback for browsers without resize support.
+                }
+            }
+
+            return new Promise((resolve) => {
                 const image = new Image();
                 const objectUrl = URL.createObjectURL(file);
                 image.onload = () => {
@@ -123,7 +142,7 @@
                     canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
                     canvas.toBlob((blob) => {
                         resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }) : file);
-                    }, "image/jpeg", 0.82);
+                    }, "image/jpeg", 0.75);
                 };
                 image.onerror = () => {
                     URL.revokeObjectURL(objectUrl);

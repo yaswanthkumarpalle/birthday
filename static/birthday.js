@@ -63,6 +63,7 @@ const lowPowerDevice = window.matchMedia("(max-width: 600px)").matches || (navig
 let pieces = [];
 
 function burstConfetti(originX, originY, count = 160) {
+    if (lowPowerDevice) return;
     for (let i = 0; i < count; i++) {
         pieces.push({
             x: originX, y: originY,
@@ -128,6 +129,7 @@ document.addEventListener("visibilitychange", () => {
 draw();
 
 function launchFireworkShow() {
+    if (lowPowerDevice) return;
     let count = 0;
     const burstCount = lowPowerDevice ? 3 : 5;
     const particleCount = lowPowerDevice ? 24 : 50;
@@ -142,6 +144,7 @@ function launchFireworkShow() {
 
 /* ---------- Floating hearts ---------- */
 function launchFloatingHearts() {
+    if (lowPowerDevice) return;
     const container = document.getElementById("floating-hearts");
     if (!container) return;
     const emojis = ["💖", "💕", "💗", "✨", "🎉"];
@@ -219,6 +222,7 @@ function popBalloon(balloon, color) {
 }
 
 function startBalloonSpawner() {
+    if (lowPowerDevice) return;
     spawnBalloon();
     setInterval(spawnBalloon, lowPowerDevice ? 2400 : 1400);
 }

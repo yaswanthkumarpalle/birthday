@@ -865,6 +865,38 @@ body.theme-celebration { background: radial-gradient(circle at top, rgba(246, 21
     }
 }
 
+@media (max-width: 600px) {
+    body {
+        animation: none;
+    }
+
+    .balloons span,
+    .sparkle-field .spark,
+    .box3d,
+    .glow-ring,
+    .heart-line span,
+    .photo-glow,
+    .pop-balloon {
+        animation: none;
+    }
+
+    .sparkle-field,
+    .balloons,
+    #confetti,
+    .floating-hearts,
+    .pop-balloons {
+        display: none;
+    }
+
+    .card {
+        backdrop-filter: none;
+    }
+
+    .slide.active {
+        animation: none;
+    }
+}
+
 /* ============ Create/Created form pages ============ */
 .form-card h1 { font-size: 1.7rem; color: #2d2d2d; margin-bottom: 0.5rem; }
 .form-card .subtitle { color: #666; margin-bottom: 1.5rem; }
