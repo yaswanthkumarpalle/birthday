@@ -59,11 +59,50 @@ if (canvas) {
 }
 
 const confettiColors = ["#ff6b81", "#feca57", "#48dbfb", "#1dd1a1", "#a29bfe", "#ff9ff3", "#ffe066"];
+const skyshotColors = ["#ff1744", "#ffea00", "#00e5ff", "#76ff03", "#ff4081", "#d500f9", "#ffffff"];
 const lowPowerDevice = window.matchMedia("(max-width: 900px)").matches
     || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
     || (navigator.deviceMemory && navigator.deviceMemory <= 4)
     || (navigator.connection && navigator.connection.saveData === true);
 let pieces = [];
+let skyshotTimer = null;
+let skyshotSlide = 0;
+let lastFrameTime = 0;
+let burstColorIndex = 0;
+let burstNumber = 0;
+let grandBurstActive = false;
+let drawScheduled = false;
+function scheduleDraw() {
+    if (drawScheduled || document.hidden) return;
+    drawScheduled = true;
+    requestAnimationFrame((timestamp) => {
+        drawScheduled = false;
+        draw(timestamp);
+    });
+}
+
+const slideSkyshotPalettes = [
+    ["#00e676", "#2979ff", "#ff6d00", "#d500f9", "#ffea00"],
+    ["#2979ff", "#00e676", "#ff4081", "#ffd600", "#d500f9"],
+    ["#ff6d00", "#00e5ff", "#76ff03", "#ff1744", "#ffea00"],
+    ["#d500f9", "#ff4081", "#00e676", "#2979ff", "#fff8e1"],
+    ["#76ff03", "#00e676", "#00e5ff", "#ffea00", "#ff6d00"]
+];
+
+function getSelectedThemeColors() {
+    const selectedColors = [];
+    const selectedThemes = typeof balloonThemes !== "undefined" && balloonThemes.length
+        ? balloonThemes
+        : ["classic"];
+
+    selectedThemes.forEach((theme) => {
+        (balloonThemeColors[theme] || []).forEach((color) => {
+            if (!selectedColors.includes(color)) selectedColors.push(color);
+        });
+    });
+
+    return selectedColors.length ? selectedColors : slideSkyshotPalettes[0];
+}
 
 function burstConfetti(originX, originY, count = 160) {
     if (lowPowerDevice) return;
@@ -80,70 +119,212 @@ function burstConfetti(originX, originY, count = 160) {
             life: 0
         });
     }
-    if (!document.hidden) requestAnimationFrame(draw);
+    scheduleDraw();
 }
 
-function fireworkBurst(x, y, count = 50) {
+function fireworkBurst(x, y, count = 50, palette = skyshotColors, allowCrackle = true, color = null, isGrand = false) {
+    x = Math.max(40, Math.min(canvas.width - 40, x));
+    y = Math.max(45, Math.min(canvas.height * 0.58, y));
+    const patterns = ["ring", "star", "willow"];
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+    const shellColor = color || palette[0];
+
+    pieces.push({
+        x, y, vx: 0, vy: 0, gravity: 0, drag: 1,
+        size: isGrand ? 42 : 24, color: shellColor, shape: "flash",
+        rotation: 0, spin: 0, life: 0, maxLife: 18
+    });
+    pieces.push({
+        x, y, vx: 0, vy: 0, gravity: 0, drag: 1,
+        size: isGrand ? 20 : 10, color: shellColor, shape: "halo",
+        rotation: 0, spin: 0, life: 0, maxLife: 42
+    });
+
     for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count;
-        const speed = Math.random() * 6 + 3;
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.08;
+        let speed = Math.random() * (isGrand ? 1.7 : 1.35) + (isGrand ? 1.3 : 1.05);
+        if (pattern === "star" && i % 5 === 0) speed += 0.65;
+        if (pattern === "willow") speed *= 0.62;
         pieces.push({
             x, y,
+            previousX: x,
+            previousY: y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            gravity: 0.12,
-            size: Math.random() * 5 + 3,
-            color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-            rotation: 0, spin: 0, life: 0
+            gravity: pattern === "willow" ? 0.022 : 0.012,
+            drag: pattern === "willow" ? 0.996 : 0.999,
+            size: Math.random() * (isGrand ? 3.2 : 2.5) + (isGrand ? 2.2 : 1.8),
+            color: shellColor,
+            shape: i % 9 === 0 ? "sparkle" : (pattern === "star" && i % 5 === 0 ? "dot" : (pattern === "willow" ? "spark" : "dash")),
+            rotation: angle, spin: 0, life: 0,
+            maxLife: pattern === "willow" ? (lowPowerDevice ? 360 : 620) : (lowPowerDevice ? 280 : 480)
         });
     }
-    if (!document.hidden) requestAnimationFrame(draw);
+
+    // A smaller delayed shell creates the crackling finish of a real firework.
+    if (allowCrackle) {
+        setTimeout(() => {
+            if (!document.hidden) fireworkBurst(x + (Math.random() - 0.5) * 18, y + (Math.random() - 0.5) * 18, Math.max(8, Math.floor(count * 0.22)), palette, false, shellColor, false);
+        }, 260);
+    }
+    scheduleDraw();
 }
 
-function draw() {
+function launchSkyshot(slideIndex = skyshotSlide) {
+    if (!canvas || grandBurstActive) return;
+
+    const selectedColors = getSelectedThemeColors();
+    const palette = selectedColors.slice(slideIndex % selectedColors.length)
+        .concat(selectedColors.slice(0, slideIndex % selectedColors.length));
+    const shellColor = palette[burstColorIndex % palette.length];
+    burstColorIndex++;
+    const isGrand = burstNumber % 3 === 1;
+    burstNumber++;
+    if (isGrand) grandBurstActive = true;
+    const targetX = canvas.width * (0.18 + Math.random() * 0.64);
+    const targetY = canvas.height * (0.12 + Math.random() * 0.3);
+    const startX = targetX + (Math.random() - 0.5) * 80;
+    const startY = canvas.height + 10;
+    const flightTime = lowPowerDevice ? (isGrand ? 1450 : 1200) : (isGrand ? 1750 : 1500);
+    const flightFrames = Math.round(flightTime / 16.67);
+    pieces.push({
+        x: startX,
+        y: startY,
+        previousX: startX,
+        previousY: startY,
+        vx: (targetX - startX) / flightFrames,
+        vy: (targetY - startY) / flightFrames,
+        gravity: 0,
+        drag: 1,
+        size: isGrand ? 4.5 : 2.5,
+        color: shellColor,
+        shape: "rocket",
+        rotation: 0,
+        spin: 0,
+        life: 0,
+        maxLife: flightFrames
+    });
+
+    scheduleDraw();
+    setTimeout(() => fireworkBurst(targetX, targetY, lowPowerDevice ? (isGrand ? 28 : 16) : (isGrand ? 90 : 55), palette, !lowPowerDevice, shellColor, isGrand), flightTime);
+    if (isGrand) {
+        setTimeout(() => {
+            grandBurstActive = false;
+        }, flightTime + (lowPowerDevice ? 2600 : 3200));
+    }
+}
+
+function startSkyshotShow() {
+    if (!canvas) return;
+    burstColorIndex = 0;
+    burstNumber = 0;
+    grandBurstActive = false;
+    if (skyshotTimer) clearInterval(skyshotTimer);
+    launchSkyshot(skyshotSlide);
+    skyshotTimer = setInterval(() => launchSkyshot(skyshotSlide), lowPowerDevice ? 2200 : 1150);
+}
+
+function draw(timestamp = 0) {
     if (!ctx || document.hidden) return;
+    if (lowPowerDevice && timestamp - lastFrameTime < 32) {
+        scheduleDraw();
+        return;
+    }
+    lastFrameTime = timestamp;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "lighter";
     pieces.forEach(p => {
+        p.previousX = p.x;
+        p.previousY = p.y;
         p.vy += p.gravity;
+        p.vx *= p.drag || 1;
+        p.vy *= p.drag || 1;
         p.x += p.vx;
         p.y += p.vy;
+        if (p.shape === "rocket" && p.life >= p.maxLife) p.life = 999;
         p.rotation += p.spin;
         p.life++;
 
         ctx.save();
-        ctx.globalAlpha = Math.max(0, 1 - p.life / 240);
+        ctx.globalAlpha = Math.max(0, 1 - p.life / (p.maxLife || 300));
         ctx.translate(p.x, p.y);
         ctx.rotate((p.rotation * Math.PI) / 180);
         ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = p.shape === "flash" ? (lowPowerDevice ? 4 : 10) : 0;
+        if (p.shape === "flash") {
+            const flashProgress = p.life / p.maxLife;
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * (1 - flashProgress * 0.6));
+            gradient.addColorStop(0, "rgba(255,255,255,0.95)");
+            gradient.addColorStop(0.35, p.color + "cc");
+            gradient.addColorStop(1, p.color + "00");
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size * (1 - flashProgress * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+        } else if (p.shape === "halo") {
+            const haloProgress = p.life / p.maxLife;
+            ctx.globalAlpha *= 1 - haloProgress;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size + haloProgress * 38, 0, Math.PI * 2);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        } else if (p.shape === "sparkle") {
+            const sparkleSize = p.size * (1 + Math.sin(p.life * 0.22) * 0.35);
+            ctx.globalAlpha *= 0.9;
+            ctx.beginPath();
+            ctx.moveTo(-sparkleSize * 2.2, 0);
+            ctx.lineTo(sparkleSize * 2.2, 0);
+            ctx.moveTo(0, -sparkleSize * 2.2);
+            ctx.lineTo(0, sparkleSize * 2.2);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = Math.max(1, p.size * 0.7);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, sparkleSize, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (p.shape === "rocket") {
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = lowPowerDevice ? 0 : 6;
+            ctx.beginPath();
+            ctx.moveTo(p.previousX - p.x, p.previousY - p.y);
+            ctx.lineTo(0, 0);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size + 1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        } else if (p.shape === "dot") {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(p.previousX - p.x, p.previousY - p.y);
+            ctx.lineTo(0, 0);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.shape === "spark" ? p.size * 0.7 : p.size;
+            ctx.stroke();
+            if (p.shape !== "spark") ctx.fillRect(-p.size / 2, -p.size / 2, p.size * 1.8, p.size * 0.55);
+        }
+        ctx.shadowBlur = 0;
         ctx.restore();
     });
-    pieces = pieces.filter(p => p.life < 240);
+    pieces = pieces.filter(p => p.life < (p.maxLife || 300));
 
     if (!pieces.length) return;
-    requestAnimationFrame(draw);
+    scheduleDraw();
 }
 
 document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && pieces.length) requestAnimationFrame(draw);
+    if (!document.hidden && pieces.length) scheduleDraw();
 });
 
 draw();
-
-function launchFireworkShow() {
-    if (lowPowerDevice) return;
-    let count = 0;
-    const burstCount = lowPowerDevice ? 3 : 5;
-    const particleCount = lowPowerDevice ? 24 : 50;
-    const interval = setInterval(() => {
-        const x = Math.random() * canvas.width * 0.7 + canvas.width * 0.15;
-        const y = Math.random() * canvas.height * 0.4 + canvas.height * 0.1;
-        fireworkBurst(x, y, particleCount);
-        count++;
-        if (count >= burstCount) clearInterval(interval);
-    }, 500);
-}
 
 /* ---------- Floating hearts ---------- */
 function launchFloatingHearts() {
@@ -171,6 +352,8 @@ function launchFloatingHearts() {
 function spawnBalloon() {
     const container = document.getElementById("pop-balloons");
     if (!container) return;
+    const maximumBalloons = lowPowerDevice ? 1 : 3;
+    if (container.querySelectorAll(".pop-balloon").length >= maximumBalloons) return;
 
     const balloon = document.createElement("div");
     balloon.className = "pop-balloon";
@@ -227,7 +410,7 @@ function popBalloon(balloon, color) {
 function startBalloonSpawner() {
     if (lowPowerDevice) return;
     spawnBalloon();
-    setInterval(spawnBalloon, lowPowerDevice ? 2400 : 1400);
+    setInterval(spawnBalloon, 4200);
 }
 
 /* ---------- Slideshow ---------- */
@@ -259,6 +442,7 @@ function showSlide(index) {
 
     const safeIndex = ((index % slides.length) + slides.length) % slides.length;
     currentSlide = safeIndex;
+    skyshotSlide = safeIndex;
 
     slides.forEach(s => s.classList.remove("active"));
     dots.forEach(d => d.classList.remove("active"));
@@ -268,6 +452,7 @@ function showSlide(index) {
 
     updateSlideNavigation();
     typeFeeling(slides[safeIndex]);
+    if (card && card.classList.contains("reveal")) startSkyshotShow();
 }
 
 function typeFeeling(slideEl) {
@@ -389,7 +574,7 @@ if (giftBox) {
                 card.classList.add("reveal");
                 typeTitle();
                 startSlideshow();
-                launchFireworkShow();
+                startSkyshotShow();
                 launchFloatingHearts();
                 startBalloonSpawner();
             }, 950);
@@ -418,3 +603,10 @@ function enableCardTilt() {
     });
 }
 enableCardTilt();
+
+const saveMemoryButton = document.getElementById("save-memory");
+if (saveMemoryButton) {
+    saveMemoryButton.addEventListener("click", () => {
+        window.print();
+    });
+}

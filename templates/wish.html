@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Happy Birthday, {{ name }}!</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260904-responsive-v2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260904-selected-themes') }}">
 </head>
 <body>
     <div class="sparkle-field" id="sparkle-field"></div>
@@ -73,6 +73,7 @@
         </div>
 
         <p class="from-line">— With love, {{ sender }}</p>
+        <button class="save-memory-btn" id="save-memory" type="button">⬇ Save Memory</button>
     </main>
 
     <div class="floating-hearts" id="floating-hearts"></div>
@@ -96,6 +97,6 @@
         const slideCount = wishData.slides.length;
     </script>
 
-    <script src="{{ url_for('static', filename='birthday.js', v='20260904-chrome-fix') }}"></script>
+    <script src="{{ url_for('static', filename='birthday.js', v='20260904-selected-themes') }}"></script>
 </body>
 </html>
