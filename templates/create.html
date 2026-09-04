@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Birthday Wish</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260904-mobile') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260904-chrome-fix') }}">
 </head>
 <body>
     <main class="card form-card">
@@ -65,7 +65,7 @@
         const wishForm = document.getElementById("wish-form");
         const generateButton = document.getElementById("generate-btn");
         const uploadStatus = document.getElementById("upload-status");
-        const maxPhotoDimension = window.matchMedia("(max-width: 600px)").matches ? 1024 : 1600;
+        const maxPhotoDimension = window.matchMedia("(max-width: 900px)").matches ? 1024 : 1600;
         const draftStorageKey = "birthday-wish-draft";
 
         function saveDraft() {

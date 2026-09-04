@@ -59,7 +59,10 @@ if (canvas) {
 }
 
 const confettiColors = ["#ff6b81", "#feca57", "#48dbfb", "#1dd1a1", "#a29bfe", "#ff9ff3", "#ffe066"];
-const lowPowerDevice = window.matchMedia("(max-width: 600px)").matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+const lowPowerDevice = window.matchMedia("(max-width: 900px)").matches
+    || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+    || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+    || (navigator.connection && navigator.connection.saveData === true);
 let pieces = [];
 
 function burstConfetti(originX, originY, count = 160) {
