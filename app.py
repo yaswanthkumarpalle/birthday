@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, url_for
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from threading import RLock
 import uuid
 
@@ -14,8 +14,6 @@ DATA_FILE = os.path.join(app.root_path, "wishes.json")
 data_lock = RLock()
 data_cache = None
 data_mtime_ns = None
-WISH_LIFETIME = timedelta(hours=24)
-
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
@@ -49,17 +47,6 @@ ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
-
-
-def wish_expired(entry):
-    try:
-        created_at = datetime.fromisoformat(entry["created_at"])
-    except (KeyError, TypeError, ValueError):
-        return True
-
-    if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=timezone.utc)
-    return datetime.now(timezone.utc) - created_at >= WISH_LIFETIME
 
 
 @app.after_request
@@ -135,9 +122,6 @@ def wish(wish_id):
         entry["created_at"] = datetime.now(timezone.utc).isoformat()
         data[wish_id] = entry
         save_data(data)
-
-    if wish_expired(entry):
-        return "This wish has expired 💔", 404
 
     return render_template(
         "wish.html",
